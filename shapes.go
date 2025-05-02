@@ -119,12 +119,253 @@ func drawMoveBase(screen *ebiten.Image, cells [][]*Cell, path [][]int, count int
 	}
 }
 
+func solve(screen *ebiten.Image, maze *Maze, cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int, row int) (bool, [][]int) {
+	fmt.Println("seenn", seen, path, current)
+	if current == maze.end {
+		return true, *path
+	}
+	if current.col > maze.numberOfCols-1 || current.row > maze.numberOfRows-1 || current.col < 0 || current.row < 0 {
+		fmt.Println("mimo", current)
+		return true, *path
+	}
+
+	for _, s := range *seen {
+		if s[0] == current.col && s[1] == current.row {
+			return false, *path
+		}
+	}
+
+	*seen = append(*seen, []int{current.col, current.row})
+	*path = append(*path, []int{current.col, current.row})
+	//_____________________________________________________________________
+	// NOTE: pre vsetky styry susedov musim zavolat
+	// toto setovanie rowu mi ide zaradom a to neni dobre
+
+	fmt.Println(row)
+	directions := [][]int{
+		{-1, 0}, // Up
+		{1, 0},  // Down
+		{0, -1}, // Left
+		{0, 1},  // Right
+	}
+	for i := range directions {
+		next := GridItem{
+			col: (current.col + directions[i][0]) % maze.numberOfCols,
+			row: (current.row + directions[i][1]) % maze.numberOfRows,
+		}
+		if next.col < 0 || next.row < 0 {
+			continue
+		}
+
+		currentCell := cells[current.col][current.row]
+		nextCell := cells[next.col][next.row]
+		fmt.Println("curr", currentCell)
+		fmt.Println("next", nextCell)
+		if current.col < next.col && (!nextCell.leftBorder && !currentCell.rightBorder) { // Next is above
+			currentCell.drawMove(screen, nextCell)
+
+		} else if current.row < next.row && (!nextCell.topBorder && !currentCell.bottomBorder) { // Next is above
+			currentCell.drawMove(screen, nextCell)
+
+		}
+
+		if current.row > next.row && !nextCell.bottomBorder && !currentCell.topBorder { // Next is above
+			currentCell.drawMove(screen, nextCell)
+		}
+		if current.col > next.col && (!nextCell.rightBorder && !currentCell.leftBorder) { // Next is above
+			currentCell.drawMove(screen, nextCell)
+		}
+		// }
+		// if !nextCell.topBorder && !currentCell.bottomBorder { // Next is to the right
+		// 	currentCell.drawMove(screen, nextCell)
+		// }
+		//
+		// else if !nextCell.topBorder && !currentCell.bottomBorder { // Next is to the right
+		// 	currentCell.drawMove(screen, nextCell)
+		// }
+		//}
+		//__________________________________________________________________________
+		if g, p := solve(screen, maze, cells, next, seen, path, row); g {
+			return true, p
+		}
+
+	}
+
+	//BUG: here !!! musis mu dat na vyber so susedov ... nie setnut dalsieho
+	// next := GridItem{
+	// 	col: (current.col) % maze.numberOfCols,
+	// 	row: row,
+	// }
+	// //NOTE: tu urobit possible neighnbors?
+	// a foreach???
+
+	// var chosenDirection []int
+	// directions := map[string][]int{
+	// 	"up":    {-1, 0}, // Up
+	// 	"down":  {1, 0},  // Down
+	// 	"left":  {0, -1}, // Left
+	// 	"right": {0, 1},  // Right
+	// }
+	//
+	// currentCell := cells[current.col][current.row]
+	// if !currentCell.rightBorder {
+	// 	chosenDirection = directions["right"]
+	// } else if !currentCell.leftBorder {
+	// 	chosenDirection = directions["left"]
+	// } else if !currentCell.bottomBorder {
+	// 	chosenDirection = directions["down"]
+	// } else if !currentCell.topBorder {
+	// 	chosenDirection = directions["up"]
+	// }
+	// //for _, dir := range directions {
+	// c := current.col + chosenDirection[0]
+	// r := current.row + chosenDirection[1]
+	// fmt.Println(c, r, chosenDirection)
+	// if c < 1 || r < 1 {
+	// 	return false, *path
+	// }
+	// next := GridItem{
+	// 	col: c,
+	// 	row: r,
+	// }
+	// if next.col < 0 || next.col > maze.numberOfCols-1 || next.row < 0 || next.row > maze.numberOfRows-1 {
+	// 	// if HERE try another direction
+	// 	return false, *path
+	// }
+	// for _, s := range *seen {
+	// 	if s[0] == next.col && s[1] == next.row {
+	// 		return false, *path
+	// 		// nasla sa zhoda chod von
+	// 	}
+	// }
+	//
+	// Remove walls between current and next
+	// if next.col < 0 || next.row < 0 {
+	// 	return false, *path
+	// }
+
+	// Determine which walls to remove
+	*path = (*path)[:len(*path)-1]
+	return false, *path
+}
+
+func solvei(screen *ebiten.Image, maze *Maze, cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int, row int) (bool, [][]int) {
+	if current == maze.end {
+		return true, *path
+	}
+
+	if current.col > maze.numberOfCols-1 || current.row > maze.numberOfRows-1 || current.col < 0 || current.row < 0 {
+		fmt.Println("mimo", current)
+		return false, *path
+	}
+	//fmt.Println("nextCellPosition", seen)
+
+	for _, s := range *seen {
+		if s[0] == current.col && s[1] == current.row {
+			return false, *path
+		}
+	}
+	//INFO: bud pointer alebo deep copy
+	// newPath := make([][]int, len(path))
+	// copy(newPath, path) // Create a deep copy to avoid modifying the original
+	// newPath = append(newPath, []int{current.col, current.row})
+
+	directions := [][]int{
+		{-1, 0}, // Up
+		{1, 0},  // Down
+		{0, -1}, // Left
+		{0, 1},  // Right
+	}
+	// directionsMap := map[string][]int{
+	// 	"top":    {-1, 0}, // Up
+	// 	"bottom": {1, 0},  // Down
+	// 	"left":   {0, -1}, // Left
+	// 	"right":  {0, 1},  // Right
+	// }
+
+	*path = append(*path, []int{current.col, current.row})
+
+	currentCell := cells[current.col][current.row]
+	var currentDirections []string
+	if currentCell.topBorder == false {
+		currentDirections = append(currentDirections, "top")
+	}
+
+	if currentCell.bottomBorder == false {
+		currentDirections = append(currentDirections, "bottom")
+	}
+
+	if currentCell.leftBorder == false {
+		currentDirections = append(currentDirections, "left")
+	}
+	if currentCell.rightBorder == false {
+		currentDirections = append(currentDirections, "right")
+	}
+	fmt.Println(len(currentDirections))
+	//for _, val := range directionsMap {
+	for i := range directions {
+		//for i := 4; i < 4; i++ {
+		// next := GridItem{
+		// 	col: current.col + val[0],
+		// 	row: current.row + val[1],
+		// }
+		fmt.Println(directions[i], currentDirections[i])
+		next := GridItem{
+			col: (current.col + directions[i][0]) % maze.numberOfCols,
+			row: (current.row + directions[i][1]) % maze.numberOfRows,
+		}
+		if next.col < 0 || next.row < 0 {
+			continue
+		}
+
+		//
+
+		// Remove walls between current and next
+		nextCell := cells[next.col][next.row]
+		// if currentDirections[i] == "top" && nextCell.bottomBorder == false {
+		// 	currentCell.drawMove(screen, nextCell)
+		// }
+		//
+		// if currentDirections[i] == "bottom" && nextCell.topBorder == false {
+		// 	currentCell.drawMove(screen, nextCell)
+		// }
+		//
+		// if currentDirections[i] == "left" && nextCell.rightBorder == false {
+		// 	currentCell.drawMove(screen, nextCell)
+		// }
+
+		if !nextCell.topBorder {
+			currentCell.drawMove(screen, nextCell)
+		}
+
+		if !nextCell.bottomBorder {
+			currentCell.drawMove(screen, nextCell)
+		}
+		// // if currentCell.rightBorder && nextCell.leftBorder {
+		// 	fmt.Println("LLLLLL")
+		//
+		// 	return false, *path
+		// }
+		//
+		// if currentCell.leftBorder && nextCell.rightBorder {
+		// 	fmt.Println(",,,,,LLLLLL")
+		// 	return false, *path
+		// }
+		fmt.Println("curr", currentCell)
+		fmt.Println("next", nextCell)
+		// //
+		if g, p := solvei(screen, maze, cells, next, seen, path, row); g {
+			return true, p
+		}
+	}
+	return false, *path
+}
 func removeWalls(cells [][]*Cell, currentItem GridItem, seen *[][]int, path *[][]int, maze *Maze) (bool, [][]int) {
 	if currentItem.col > maze.numberOfCols-1 || currentItem.row > maze.numberOfRows-1 || currentItem.col < 0 || currentItem.row < 0 {
 		fmt.Println("mimo", currentItem)
 		return false, *path
 	}
-	fmt.Println("nextCellPosition", seen)
+	//fmt.Println("nextCellPosition", seen)
 
 	for _, s := range *seen {
 		if s[0] == currentItem.col && s[1] == currentItem.row {
@@ -226,9 +467,9 @@ func (game *Game) updatingCounterDva() {
 		for {
 			select {
 			case <-tic.C:
-				game.countdva++
+				//game.countdva++
 				// Do something on each tick
-				fmt.Println("going", game.count)
+				//fmt.Println("going", game.count)
 			}
 		}
 	}()
@@ -245,7 +486,7 @@ func (game *Game) updatingStuff() {
 			case <-tic.C:
 				game.count++
 				// Do something on each tick
-				fmt.Println("going", game.count)
+				//fmt.Println("going", game.count)
 			}
 		}
 	}()
