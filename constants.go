@@ -1,6 +1,6 @@
 package main
 
 var (
-	cellXSize float32 = 80
-	cellYSize float32 = 80
+	cellXSize float32 = 10
+	cellYSize float32 = 10
 )

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -19,17 +18,17 @@ type Game struct {
 var Newpath [][]int
 
 func (g *Game) Update() error {
-	makeCellsVisible(Cells, g, &maze)
+	//makeCellsVisible(Cells, g, &maze)
 
-	if Cells[maze.numberOfCols-1][maze.numberOfRows-1].visible == true {
-
-		num := maze.numberOfCols * maze.numberOfRows
-		if g.count < num {
-			Newpath = Path[0:g.countdva]
-		} else {
-			Newpath = Path
-		}
-	}
+	// if Cells[maze.numberOfCols-1][maze.numberOfRows-1].visible == true {
+	//
+	// 	num := maze.numberOfCols * maze.numberOfRows
+	// 	if g.count < num {
+	// 		Newpath = Path[0:g.countdva]
+	// 	} else {
+	// 		Newpath = Path
+	// 	}
+	// }
 	return nil
 }
 
@@ -42,8 +41,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if Cells[maze.numberOfCols-1][maze.numberOfRows-1].visible == true {
 		g.updatingCounterDva()
 	}
-	num := maze.numberOfCols * maze.numberOfRows
-	fmt.Println(num, maze.finalPath)
 	temp := Cells[0][0]
 	for i := range len(maze.finalPath) - 1 {
 		f := maze.finalPath[i]
@@ -53,9 +50,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	temp.drawMove(screen, Cells[maze.end.col][maze.end.row])
-	// beg := GridItem{col: 0, row: 0}
-	// seen := [][]int{}
-	// path := [][]int{}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -77,9 +71,9 @@ type Maze struct {
 }
 
 var maze = Maze{
-	numberOfCols:  13,
-	numberOfRows:  8,
-	padding:       80,
+	numberOfCols:  100,
+	numberOfRows:  70,
+	padding:       30,
 	drawingFertig: false,
 }
 
@@ -105,7 +99,7 @@ func main() {
 	start := GridItem{col: 0, row: 0}
 	end := GridItem{col: maze.numberOfCols - 1, row: maze.numberOfRows - 1}
 	maze.finalPath = solve(&maze, Cells, start, end)
-	fmt.Println("main", maze.finalPath)
+	//fmt.Println("main", maze.finalPath)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}

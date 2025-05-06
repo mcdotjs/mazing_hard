@@ -192,7 +192,7 @@ func walk(cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int) (bool
 
 		for _, s := range *seen {
 			if s[0] == next.col && s[1] == next.row {
-				fmt.Println("seen next", next)
+			//	fmt.Println("seen next", next)
 				continue
 			}
 		}
@@ -218,22 +218,20 @@ func walk(cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int) (bool
 			continue
 		}
 
-		fmt.Println("appendujeme", next)
+		//fmt.Println("appendujeme", next)
 		if recurse, p := walk(cells, next, path, seen); recurse {
 			return true, p
 		}
 	}
+	// minuuuu sa directions tak odstran posledny item
 	*path = (*path)[:len(*path)-1]
 	return false, *path
-	//fmt.Println("nextCellPosition", seen)
-
-	// returnem grid item na ktory som sa dostal
 }
 
 // TODO: rf
 func removeWalls(cells [][]*Cell, currentItem GridItem, seen *[][]int, path *[][]int, maze *Maze) (bool, [][]int) {
 	if currentItem.col > maze.numberOfCols-1 || currentItem.row > maze.numberOfRows-1 || currentItem.col < 0 || currentItem.row < 0 {
-		fmt.Println("mimo", currentItem)
+		//fmt.Println("mimo", currentItem)
 		return false, *path
 	}
 	//fmt.Println("nextCellPosition", seen)
