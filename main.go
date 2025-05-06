@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -41,6 +42,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if Cells[maze.numberOfCols-1][maze.numberOfRows-1].visible == true {
 		g.updatingCounterDva()
 	}
+	num := maze.numberOfCols * maze.numberOfRows
+	fmt.Println(num, maze.finalPath)
+	temp := Cells[0][0]
+	for i := range len(maze.finalPath) - 1 {
+		f := maze.finalPath[i]
+		s := maze.finalPath[i+1]
+		Cells[f[0]][f[1]].drawMove(screen, Cells[s[0]][s[1]])
+		temp = Cells[s[0]][s[1]]
+	}
+
+	temp.drawMove(screen, Cells[maze.end.col][maze.end.row])
+	// beg := GridItem{col: 0, row: 0}
+	// seen := [][]int{}
+	// path := [][]int{}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -58,6 +73,7 @@ type Maze struct {
 	end              GridItem
 	drawingRowNumber int
 	drawingFertig    bool
+	finalPath        [][]int
 }
 
 var maze = Maze{
@@ -85,7 +101,11 @@ func main() {
 	seen := [][]int{}
 	path := [][]int{}
 	_, Path = removeWalls(Cells, beg, &seen, &path, &maze)
-	//fmt.Println("main", Path)
+
+	start := GridItem{col: 0, row: 0}
+	end := GridItem{col: maze.numberOfCols - 1, row: maze.numberOfRows - 1}
+	maze.finalPath = solve(&maze, Cells, start, end)
+	fmt.Println("main", maze.finalPath)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}

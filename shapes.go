@@ -67,7 +67,6 @@ func createCells(cols int, rows int, padding float32) [][]*Cell {
 	cells := make([][]*Cell, 0)
 	for c := range cols {
 
-		fmt.Println("in")
 		colsSlice := make([]*Cell, 0)
 		for r := range rows {
 			aa := float32(c) * cellXSize
@@ -119,14 +118,27 @@ func drawMoveBase(screen *ebiten.Image, cells [][]*Cell, path [][]int, count int
 	}
 }
 
-func solve(screen *ebiten.Image, maze *Maze, cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int, row int) (bool, [][]int) {
-	fmt.Println("seenn", seen, path, current)
+func solve(maze *Maze, cells [][]*Cell, start GridItem, end GridItem) [][]int {
+	// tato funkcia vrati good path
+	// nezabudni na backtracking
+	// 1.base cases for curr
+
+	// 2. zavolat walk function a vsetky 4 deti
+	p := [][]int{}
+	seen := [][]int{}
+	walk(cells, start, &p, &seen)
+	return p
+}
+
+func walk(cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int) (bool, [][]int) {
+	//fmt.Println("currrne", current)
 	if current == maze.end {
 		return true, *path
 	}
+
 	if current.col > maze.numberOfCols-1 || current.row > maze.numberOfRows-1 || current.col < 0 || current.row < 0 {
-		fmt.Println("mimo", current)
-		return true, *path
+		//fmt.Println("mimo", current)
+		return false, *path
 	}
 
 	for _, s := range *seen {
@@ -135,118 +147,84 @@ func solve(screen *ebiten.Image, maze *Maze, cells [][]*Cell, current GridItem, 
 		}
 	}
 
+	// to remove
+	// if current.col == maze.numberOfCols-1 {
+	// 	row++
+	// }
+
 	*seen = append(*seen, []int{current.col, current.row})
 	*path = append(*path, []int{current.col, current.row})
-	//_____________________________________________________________________
-	// NOTE: pre vsetky styry susedov musim zavolat
-	// toto setovanie rowu mi ide zaradom a to neni dobre
+	//NOTE: toto mam ked idem zaradom
+	// zlava do prava
+	// next := GridItem{
+	// 	col: (current.col + 1) % maze.numberOfCols,
+	// 	row: row,
+	// }
+	// walk(next, path, row)
 
-	fmt.Println(row)
 	directions := [][]int{
 		{-1, 0}, // Up
 		{1, 0},  // Down
 		{0, -1}, // Left
 		{0, 1},  // Right
 	}
-	for i := range directions {
+
+	currentCell := cells[current.col][current.row]
+	for dir := range directions {
+		//porovnat kde mam ja hranicu
+		// a jedna zo 4 children
+
+		// ---- ci je seen
+		// ---- ci existuje?
+		// ---- ci ma hranicu?
+
+		// ----??? ale to su base casy, ktore by mi to mali stopnut ....CI???
 		next := GridItem{
-			col: (current.col + directions[i][0]) % maze.numberOfCols,
-			row: (current.row + directions[i][1]) % maze.numberOfRows,
+			col: (current.col + directions[dir][0]) % maze.numberOfCols,
+			row: (current.row + directions[dir][1]) % maze.numberOfRows,
 		}
-		if next.col < 0 || next.row < 0 {
+
+		// kedze setujem nextCell musim, dat valid position checky aj sem
+		if next.col > maze.numberOfCols-1 || next.row > maze.numberOfRows-1 || next.col < 0 || next.row < 0 {
+			//fmt.Println("mimo next", next)
 			continue
 		}
 
-		currentCell := cells[current.col][current.row]
+		for _, s := range *seen {
+			if s[0] == next.col && s[1] == next.row {
+				fmt.Println("seen next", next)
+				continue
+			}
+		}
+
 		nextCell := cells[next.col][next.row]
-		fmt.Println("curr", currentCell)
-		fmt.Println("next", nextCell)
-		if current.col < next.col && (!nextCell.leftBorder && !currentCell.rightBorder) { // Next is above
-			currentCell.drawMove(screen, nextCell)
 
-		} else if current.row < next.row && (!nextCell.topBorder && !currentCell.bottomBorder) { // Next is above
-			currentCell.drawMove(screen, nextCell)
-
+		// mam next a mam current ...
+		// tu potrebujem funkciu ci mozem ist tym smerom .... ked nie tak continue... bez zavolania walku
+		if next.row > current.row && (currentCell.bottomBorder || nextCell.topBorder) { //next je pod
+			//fmt.Println("check 1", current, next)
+			continue
+		} else if next.row < current.row && (currentCell.topBorder || nextCell.bottomBorder) { // next je nad
+			//fmt.Println("check 2", current, next)
+			continue
+		} else if next.col > current.col && (currentCell.rightBorder || nextCell.leftBorder) { // next je napravo
+			//fmt.Println("check 3", current, next)
+			continue
+		} else if next.col < current.col && (currentCell.leftBorder || nextCell.rightBorder) { // next je nalavo
+			//fmt.Println("check 4", current, next)
+			continue
 		}
 
-		if current.row > next.row && !nextCell.bottomBorder && !currentCell.topBorder { // Next is above
-			currentCell.drawMove(screen, nextCell)
-		}
-		if current.col > next.col && (!nextCell.rightBorder && !currentCell.leftBorder) { // Next is above
-			currentCell.drawMove(screen, nextCell)
-		}
-		// }
-		// if !nextCell.topBorder && !currentCell.bottomBorder { // Next is to the right
-		// 	currentCell.drawMove(screen, nextCell)
-		// }
-		//
-		// else if !nextCell.topBorder && !currentCell.bottomBorder { // Next is to the right
-		// 	currentCell.drawMove(screen, nextCell)
-		// }
-		//}
-		//__________________________________________________________________________
-		if g, p := solve(screen, maze, cells, next, seen, path, row); g {
+		fmt.Println("appendujeme", next)
+		if recurse, p := walk(cells, next, path, seen); recurse {
 			return true, p
 		}
-
 	}
-
-	//BUG: here !!! musis mu dat na vyber so susedov ... nie setnut dalsieho
-	// next := GridItem{
-	// 	col: (current.col) % maze.numberOfCols,
-	// 	row: row,
-	// }
-	// //NOTE: tu urobit possible neighnbors?
-	// a foreach???
-
-	// var chosenDirection []int
-	// directions := map[string][]int{
-	// 	"up":    {-1, 0}, // Up
-	// 	"down":  {1, 0},  // Down
-	// 	"left":  {0, -1}, // Left
-	// 	"right": {0, 1},  // Right
-	// }
-	//
-	// currentCell := cells[current.col][current.row]
-	// if !currentCell.rightBorder {
-	// 	chosenDirection = directions["right"]
-	// } else if !currentCell.leftBorder {
-	// 	chosenDirection = directions["left"]
-	// } else if !currentCell.bottomBorder {
-	// 	chosenDirection = directions["down"]
-	// } else if !currentCell.topBorder {
-	// 	chosenDirection = directions["up"]
-	// }
-	// //for _, dir := range directions {
-	// c := current.col + chosenDirection[0]
-	// r := current.row + chosenDirection[1]
-	// fmt.Println(c, r, chosenDirection)
-	// if c < 1 || r < 1 {
-	// 	return false, *path
-	// }
-	// next := GridItem{
-	// 	col: c,
-	// 	row: r,
-	// }
-	// if next.col < 0 || next.col > maze.numberOfCols-1 || next.row < 0 || next.row > maze.numberOfRows-1 {
-	// 	// if HERE try another direction
-	// 	return false, *path
-	// }
-	// for _, s := range *seen {
-	// 	if s[0] == next.col && s[1] == next.row {
-	// 		return false, *path
-	// 		// nasla sa zhoda chod von
-	// 	}
-	// }
-	//
-	// Remove walls between current and next
-	// if next.col < 0 || next.row < 0 {
-	// 	return false, *path
-	// }
-
-	// Determine which walls to remove
 	*path = (*path)[:len(*path)-1]
 	return false, *path
+	//fmt.Println("nextCellPosition", seen)
+
+	// returnem grid item na ktory som sa dostal
 }
 
 func solvei(screen *ebiten.Image, maze *Maze, cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int, row int) (bool, [][]int) {
@@ -467,7 +445,7 @@ func (game *Game) updatingCounterDva() {
 		for {
 			select {
 			case <-tic.C:
-				//game.countdva++
+				game.countdva++
 				// Do something on each tick
 				//fmt.Println("going", game.count)
 			}
