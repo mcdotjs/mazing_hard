@@ -82,7 +82,7 @@ func createCells(cols int, rows int, padding float32) [][]*Cell {
 			newCell.leftBorder = true
 			newCell.visited = false
 			newCell.middlePoint = Point{x: (topLeft.x + bottomRight.x) / 2, y: (topLeft.y + bottomRight.y) / 2}
-			newCell.visible = false
+			newCell.visible = true
 			colsSlice = append(colsSlice, &newCell)
 		}
 		cells = append(cells, colsSlice)
@@ -180,8 +180,8 @@ func walk(cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int) (bool
 
 		// ----??? ale to su base casy, ktore by mi to mali stopnut ....CI???
 		next := GridItem{
-			col: (current.col + directions[dir][0]) % maze.numberOfCols,
-			row: (current.row + directions[dir][1]) % maze.numberOfRows,
+			col: (current.col + directions[dir][0]),
+			row: (current.row + directions[dir][1]),
 		}
 
 		// kedze setujem nextCell musim, dat valid position checky aj sem
@@ -204,13 +204,16 @@ func walk(cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int) (bool
 		if next.row > current.row && (currentCell.bottomBorder || nextCell.topBorder) { //next je pod
 			//fmt.Println("check 1", current, next)
 			continue
-		} else if next.row < current.row && (currentCell.topBorder || nextCell.bottomBorder) { // next je nad
+		}
+		if next.row < current.row && (currentCell.topBorder || nextCell.bottomBorder) { // next je nad
 			//fmt.Println("check 2", current, next)
 			continue
-		} else if next.col > current.col && (currentCell.rightBorder || nextCell.leftBorder) { // next je napravo
+		}
+		if next.col > current.col && (currentCell.rightBorder || nextCell.leftBorder) { // next je napravo
 			//fmt.Println("check 3", current, next)
 			continue
-		} else if next.col < current.col && (currentCell.leftBorder || nextCell.rightBorder) { // next je nalavo
+		}
+		if next.col < current.col && (currentCell.leftBorder || nextCell.rightBorder) { // next je nalavo
 			//fmt.Println("check 4", current, next)
 			continue
 		}
@@ -227,117 +230,7 @@ func walk(cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int) (bool
 	// returnem grid item na ktory som sa dostal
 }
 
-func solvei(screen *ebiten.Image, maze *Maze, cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int, row int) (bool, [][]int) {
-	if current == maze.end {
-		return true, *path
-	}
-
-	if current.col > maze.numberOfCols-1 || current.row > maze.numberOfRows-1 || current.col < 0 || current.row < 0 {
-		fmt.Println("mimo", current)
-		return false, *path
-	}
-	//fmt.Println("nextCellPosition", seen)
-
-	for _, s := range *seen {
-		if s[0] == current.col && s[1] == current.row {
-			return false, *path
-		}
-	}
-	//INFO: bud pointer alebo deep copy
-	// newPath := make([][]int, len(path))
-	// copy(newPath, path) // Create a deep copy to avoid modifying the original
-	// newPath = append(newPath, []int{current.col, current.row})
-
-	directions := [][]int{
-		{-1, 0}, // Up
-		{1, 0},  // Down
-		{0, -1}, // Left
-		{0, 1},  // Right
-	}
-	// directionsMap := map[string][]int{
-	// 	"top":    {-1, 0}, // Up
-	// 	"bottom": {1, 0},  // Down
-	// 	"left":   {0, -1}, // Left
-	// 	"right":  {0, 1},  // Right
-	// }
-
-	*path = append(*path, []int{current.col, current.row})
-
-	currentCell := cells[current.col][current.row]
-	var currentDirections []string
-	if currentCell.topBorder == false {
-		currentDirections = append(currentDirections, "top")
-	}
-
-	if currentCell.bottomBorder == false {
-		currentDirections = append(currentDirections, "bottom")
-	}
-
-	if currentCell.leftBorder == false {
-		currentDirections = append(currentDirections, "left")
-	}
-	if currentCell.rightBorder == false {
-		currentDirections = append(currentDirections, "right")
-	}
-	fmt.Println(len(currentDirections))
-	//for _, val := range directionsMap {
-	for i := range directions {
-		//for i := 4; i < 4; i++ {
-		// next := GridItem{
-		// 	col: current.col + val[0],
-		// 	row: current.row + val[1],
-		// }
-		fmt.Println(directions[i], currentDirections[i])
-		next := GridItem{
-			col: (current.col + directions[i][0]) % maze.numberOfCols,
-			row: (current.row + directions[i][1]) % maze.numberOfRows,
-		}
-		if next.col < 0 || next.row < 0 {
-			continue
-		}
-
-		//
-
-		// Remove walls between current and next
-		nextCell := cells[next.col][next.row]
-		// if currentDirections[i] == "top" && nextCell.bottomBorder == false {
-		// 	currentCell.drawMove(screen, nextCell)
-		// }
-		//
-		// if currentDirections[i] == "bottom" && nextCell.topBorder == false {
-		// 	currentCell.drawMove(screen, nextCell)
-		// }
-		//
-		// if currentDirections[i] == "left" && nextCell.rightBorder == false {
-		// 	currentCell.drawMove(screen, nextCell)
-		// }
-
-		if !nextCell.topBorder {
-			currentCell.drawMove(screen, nextCell)
-		}
-
-		if !nextCell.bottomBorder {
-			currentCell.drawMove(screen, nextCell)
-		}
-		// // if currentCell.rightBorder && nextCell.leftBorder {
-		// 	fmt.Println("LLLLLL")
-		//
-		// 	return false, *path
-		// }
-		//
-		// if currentCell.leftBorder && nextCell.rightBorder {
-		// 	fmt.Println(",,,,,LLLLLL")
-		// 	return false, *path
-		// }
-		fmt.Println("curr", currentCell)
-		fmt.Println("next", nextCell)
-		// //
-		if g, p := solvei(screen, maze, cells, next, seen, path, row); g {
-			return true, p
-		}
-	}
-	return false, *path
-}
+// TODO: rf
 func removeWalls(cells [][]*Cell, currentItem GridItem, seen *[][]int, path *[][]int, maze *Maze) (bool, [][]int) {
 	if currentItem.col > maze.numberOfCols-1 || currentItem.row > maze.numberOfRows-1 || currentItem.col < 0 || currentItem.row < 0 {
 		fmt.Println("mimo", currentItem)
@@ -350,6 +243,7 @@ func removeWalls(cells [][]*Cell, currentItem GridItem, seen *[][]int, path *[][
 			return false, *path
 		}
 	}
+
 	//INFO: bud pointer alebo deep copy
 	// newPath := make([][]int, len(path))
 	// copy(newPath, path) // Create a deep copy to avoid modifying the original
