@@ -95,29 +95,6 @@ type GridItem struct {
 	row int
 }
 
-func drawMoveBase(screen *ebiten.Image, cells [][]*Cell, path [][]int, count int, maze *Maze) {
-	//BUG: rf
-	// nechapem
-	num := maze.numberOfCols * maze.numberOfRows
-	fmt.Println(Newpath)
-	if len(Newpath) == 0 {
-		return
-	}
-	var newpath [][]int
-	if count < num {
-		newpath = Newpath[0:count]
-	} else {
-		newpath = Newpath
-	}
-	for i := range newpath {
-		if i < num-1 && path[i+1] != nil {
-			f := path[i]
-			s := path[i+1]
-			cells[f[0]][f[1]].drawMove(screen, cells[s[0]][s[1]])
-		}
-	}
-}
-
 func solve(maze *Maze, cells [][]*Cell, start GridItem, end GridItem) [][]int {
 	// tato funkcia vrati good path
 	// nezabudni na backtracking
@@ -192,7 +169,7 @@ func walk(cells [][]*Cell, current GridItem, path *[][]int, seen *[][]int) (bool
 
 		for _, s := range *seen {
 			if s[0] == next.col && s[1] == next.row {
-			//	fmt.Println("seen next", next)
+				//	fmt.Println("seen next", next)
 				continue
 			}
 		}
@@ -354,7 +331,9 @@ func (game *Game) updatingStuff() {
 		for {
 			select {
 			case <-tic.C:
-				game.count++
+				if !game.stopCount {
+					game.count++
+				}
 				// Do something on each tick
 				//fmt.Println("going", game.count)
 			}

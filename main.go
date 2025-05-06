@@ -11,45 +11,33 @@ import (
 type Game struct {
 	lastDrawTime time.Time
 	count        int
+	stopCount    bool
 	countdva     int
 	refreshRate  string
 }
 
-var Newpath [][]int
+var newpath [][]int
 
 func (g *Game) Update() error {
-	//makeCellsVisible(Cells, g, &maze)
-
-	// if Cells[maze.numberOfCols-1][maze.numberOfRows-1].visible == true {
-	//
-	// 	num := maze.numberOfCols * maze.numberOfRows
-	// 	if g.count < num {
-	// 		Newpath = Path[0:g.countdva]
-	// 	} else {
-	// 		Newpath = Path
-	// 	}
-	// }
+	if g.count == len(maze.finalPath) {
+		g.stopCount = true
+		newpath = maze.finalPath
+	} else {
+		newpath = maze.finalPath[0 : g.count%len(maze.finalPath)-1]
+	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, "Hello, World!")
 	drawCells(screen, Cells)
-	//BUG: rf
-	//drawMoveBase(screen, Cells, Newpath, g.countdva, &maze)
 
-	if Cells[maze.numberOfCols-1][maze.numberOfRows-1].visible == true {
-		g.updatingCounterDva()
-	}
-	temp := Cells[0][0]
-	for i := range len(maze.finalPath) - 1 {
-		f := maze.finalPath[i]
-		s := maze.finalPath[i+1]
+	for i := 0; i < len(newpath)-1; i++ {
+		f := newpath[i]
+		s := newpath[i+1]
 		Cells[f[0]][f[1]].drawMove(screen, Cells[s[0]][s[1]])
-		temp = Cells[s[0]][s[1]]
 	}
 
-	temp.drawMove(screen, Cells[maze.end.col][maze.end.row])
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -82,6 +70,7 @@ func main() {
 	ebiten.SetWindowTitle("Hello, World!")
 	game := &Game{
 		refreshRate: "33ms",
+		stopCount:   false,
 	}
 	game.updatingStuff()
 	Cells = createCells(maze.numberOfCols, maze.numberOfRows, float32(maze.padding))
@@ -99,7 +88,7 @@ func main() {
 	start := GridItem{col: 0, row: 0}
 	end := GridItem{col: maze.numberOfCols - 1, row: maze.numberOfRows - 1}
 	maze.finalPath = solve(&maze, Cells, start, end)
-	//fmt.Println("main", maze.finalPath)
+	maze.finalPath = append(maze.finalPath, []int{maze.numberOfCols - 1, maze.numberOfRows - 1})
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
